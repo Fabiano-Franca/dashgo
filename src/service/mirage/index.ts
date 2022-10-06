@@ -1,4 +1,4 @@
-import { createServer, Factory, Model, Response } from 'miragejs'
+import { ActiveModelSerializer, createServer, Factory, Model, Response } from 'miragejs'
 import { faker } from '@faker-js/faker';
 
 type User = {
@@ -10,6 +10,11 @@ type User = {
 export function makeServer() {
 
   const server = createServer({
+    //Define o modo de interpretação de dados da api (trabalha com relacionamentos de entidades)
+    serializers: {
+      application: ActiveModelSerializer,
+    },
+
     //Define as tabelas, os dados que serão armazenados
     models: {
       user: Model.extend<Partial<User>>({})
@@ -58,6 +63,7 @@ export function makeServer() {
         )
       });
 
+      this.get('/users/:id');
       this.post('/users');
 
       this.namespace = '';

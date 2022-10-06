@@ -1,11 +1,16 @@
 import { Box, Button, Divider, Flex, Heading, HStack, SimpleGrid, VStack } from "@chakra-ui/react";
+import { SubmitHandler, useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 import Link from "next/link";
+import { useMutation } from 'react-query'
+
 import { Input } from "../../components/Form/Input";
 import { Header } from "../../components/Header";
 import { Sidebar } from "../../components/Siderbar";
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { api } from "../../service/api";
+import { queryClient } from "../../service/queryClient";
+import { useRouter } from "next/router";
 
 type CreateUserFormData = {
   name: string;
@@ -24,15 +29,35 @@ const createUserFormSchema = yup.object().shape({
 })
 
 export default function UserList() {
+  const router = useRouter();
+
+  const createUser = useMutation(async (user: CreateUserFormData) => {
+    const response = await api.post('users', {
+      user: {
+        ...user,
+        created_at: new Date(),
+      }
+    })
+
+    return response.data.user;
+  }, {
+    //Invalida o cache do react-query se "sucesso"
+    onSuccess: () => {
+      queryClient.invalidateQueries('users')
+    }
+  });
+
   const {register, handleSubmit, formState} = useForm({
     resolver: yupResolver(createUserFormSchema)
   })
   const {errors} = formState
 
   const handleCreateUser: SubmitHandler<CreateUserFormData> = async (values) => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await createUser.mutateAsync(values);
 
-    console.log(values)
+    //Redireciona o usuário para tela de listagem de usuário, onde será 
+    //carregado uma nova lsitagem com novo cache.
+    router.push('/users')
   }
 
   return (
